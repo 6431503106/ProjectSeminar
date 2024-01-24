@@ -1,32 +1,26 @@
 <?php
-include "config.php";
+include("config.php");
+include("firebaseRDB.php");
+
+$db = new firebaseRDB($databaseURL);
+
+// Fetch product details for editing
 $id = $_GET['id'];
+$product = json_decode($db->retrieve("product/$id"), true);
 
-if (isset($_POST['update_product'])) {
-    $updated_name = mysqli_real_escape_string($conn, $_POST['p_name']);
-    $updated_code = mysqli_real_escape_string($conn, $_POST['p_code']);
-    $updated_quantity = (int)$_POST['p_quantity'];
+// Check if the form is submitted
+if(isset($_POST['edit_product'])){
+    // Update product information
+    $update = $db->update("product", $id, [
+        "p_name"     => $_POST['p_name'],
+        "p_code"     => $_POST['p_code'],
+        "p_quantity" => $_POST['p_quantity'],
+    ]);
 
-    // Check if a file was uploaded
-    if (!empty($_FILES['p_image']['name'])) {
-        $product_image_tmp_name = $_FILES['p_image']['tmp_name'];
-        $product_image = mysqli_real_escape_string($conn, $_FILES['p_image']['name']);
-
-        // Update the product with the new image
-        $update_query = "UPDATE product1 SET name='$updated_name', code='$updated_code', quantity=$updated_quantity, image='$product_image' WHERE id = $id";
-        
-        // Move the uploaded file to the destination folder
-        $upload_destination = 'uploaded_img/' . $product_image;
-        move_uploaded_file($product_image_tmp_name, $upload_destination);
-    } 
-    $update_result = mysqli_query($conn, $update_query);
-
-    if ($update_result) {
-        header("Location: index.php?msg=Product updated successfully");
-        exit();
+    if($update){
+        echo "Data updated successfully.";
     } else {
-        echo "Error updating product: " . mysqli_error($conn);
-        exit();
+        echo "Error updating data.";
     }
 }
 ?>
@@ -109,30 +103,20 @@ if (isset($_POST['update_product'])) {
 
         <div class="admin-product-form-container centered">
 
-            <?php 
-            $select = mysqli_query($conn, "SELECT * FROM product1 WHERE id = $id");
-            while($row = mysqli_fetch_assoc($select)){
-            ?>    
+        <form action="edit.php?id=<?php echo $id; ?>" method="POST">
 
-            <form action="" method="post" enctype="multipart/form-data">
+        <h3>UPDATE A PRODUCT</h3>
 
-            <h3 class="title"> Update The product </h3>
-
-            <input type="text" name="p_name"  placeholder="The product name" class="box" value="<?php echo $row['name']; ?>" required>
-            <input type="text" name="p_code"  placeholder="The product code" class="box" value="<?php echo $row["code"]; ?>" required>
-            <input type="number" name="p_quantity" min="1" placeholder="The product quantity" class="box" value="<?php echo $row['quantity']; ?>" required>
-            <input type="file" name="p_image" accept="image/png, image/jpg, image/jpeg" class="box"  required>
-            <input type="submit" class="btnProduct" name="update_product" value="UPDATE THE PRODUCT">
-        
-            </form>
-            <?php } ?>
-            <?php
-
-             $select = mysqli_query($conn, "SELECT * FROM product1");
-             
-            ?>
-
+        <input type="text" name="p_name" placeholder="Product name" class="box" required>
+        <input type="text" name="p_code" placeholder="The product code" class="box" required>
+        <input type="number" name="p_quantity" min="1" placeholder="The product quantity" class="box" required>
+        <input type="file" name="p_image" accept="image/png, image/jpg, image/jpeg"  class="box" required>
+        <input type="hidden" name="id" value="<?php echo $id?>" class="box" required>
+            <input type="submit" value="SAVE A PRODUCT" class="btnProduct" required >
+           <a href="index.php" class="btnProduct"> GO BACK </a>
+        </form>
         </div>
+
     </div>
 </body>
 </html>
